@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,6 +34,9 @@ func TestMain(m *testing.M) {
 	result := m.Run()
 
 	fmt.Println("Clearning up...")
+	if os.Getenv("TODO_FILENAME") != "" {
+		fileName = os.Getenv("TODO_FILENAME")
+	}
 	os.Remove(binName)
 	os.Remove(fileName)
 
@@ -40,7 +44,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestTodoCLI(t *testing.T) {
-	task := "test task number 1"
 
 	dir, err := os.Getwd()
 	if err != nil {
@@ -49,9 +52,46 @@ func TestTodoCLI(t *testing.T) {
 
 	cmdPath := filepath.Join(dir, binName)
 
-	t.Run("AddNewTask", func(t *testing.T) {
-		cmd := exec.Command(cmdPath, "-task", task)
+	task := "test task number 1"
+	t.Run("AddNewTaskFromArguments", func(t *testing.T) {
+		cmd := exec.Command(cmdPath, "-add", task)
 
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+	})
+	task2 := "test task number 2"
+	t.Run("AddNewTask", func(t *testing.T) {
+		cmd := exec.Command(cmdPath, "-add")
+		cmdStdin, err := cmd.StdinPipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		io.WriteString(cmdStdin, task2)
+		cmdStdin.Close()
+
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+	})
+	task3 := "test task number 3"
+	t.Run("CompleteTask", func(t *testing.T) {
+		cmd := exec.Command(cmdPath, "-add", task3)
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+		cmd = exec.Command(cmdPath, "-complete", "1")
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+	})
+	task4 := "test task number 4"
+	t.Run("DeleteTask", func(t *testing.T) {
+		cmd := exec.Command(cmdPath, "-add", task4)
+		if err := cmd.Run(); err != nil {
+			t.Fatal(err)
+		}
+		cmd = exec.Command(cmdPath, "-del", "3")
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
 		}
@@ -66,7 +106,7 @@ func TestTodoCLI(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		expected := fmt.Sprintf("  1: %s\n", task)
+		expected := fmt.Sprintf("X 1: %s\n  2: %s\n  3: %s\n", task, task2, task4)
 
 		if expected != string(out) {
 			t.Errorf("Expected %q, got %q instead", expected, string(out))
