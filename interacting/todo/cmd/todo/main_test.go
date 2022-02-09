@@ -12,7 +12,7 @@ import (
 
 var (
 	binName  = "todo"
-	fileName = ".todo.json"
+	fileName = "todo_test.json"
 )
 
 func TestMain(m *testing.M) {
@@ -31,12 +31,12 @@ func TestMain(m *testing.M) {
 
 	fmt.Println("Running tests...")
 
+	os.Setenv("TODO_FILENAME", fileName)
+	defer os.Unsetenv("TODO_FILENAME")
+
 	result := m.Run()
 
 	fmt.Println("Clearning up...")
-	if os.Getenv("TODO_FILENAME") != "" {
-		fileName = os.Getenv("TODO_FILENAME")
-	}
 	os.Remove(binName)
 	os.Remove(fileName)
 
