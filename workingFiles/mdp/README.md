@@ -8,6 +8,6 @@ This is an example Markdown file to test the preview tool
 
 ## How to install:
 ```
-go get github.com/user/program
+go get github.com/teakaysea/go-cli-sandbox/workingFiles/mdp
 ```
 
